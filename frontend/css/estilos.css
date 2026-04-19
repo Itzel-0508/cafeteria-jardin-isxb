@@ -1,0 +1,2479 @@
+/* ================================================================
+   POS CAFETERÍA JARDÍN — DISEÑO MINIMALISTA
+   ----------------------------------------------------------------
+   Fundamentos teóricos aplicados:
+   · Don Norman    — affordances claras, diseño centrado en usuario
+   · Jakob Nielsen — contraste WCAG 2.1 AA (mín 4.5:1), consistencia
+   · Steve Krug    — jerarquía obvia, orientación de estado
+   · Alan Cooper   — patrones de interacción coherentes
+   · Jenifer Tidwell — patrones para múltiples perfiles de usuario
+   ----------------------------------------------------------------
+   Teoría del color:
+   · Claro    : Verde sage + crema cálido (análogos, evoca jardín)
+   · Oscuro   : Verde musgo + negro orgánico (mismo tono, baja luz)
+   · Daltónico: Azul/amarillo — eje seguro para deuteranopía y
+                protanopía. Redundancia forma+borde (no solo color).
+   ================================================================ */
+
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,300&family=DM+Mono:wght@400;500&display=swap');
+
+/* ================================================================
+   TEMA CLARO — Jardín de día
+   Verde sage suave, fondos crema, tierra dorada
+   ================================================================ */
+:root {
+    --bg-app:        #F0F4EE;
+    --bg-panel:      #F8FAF7;
+    --bg-card:       #FFFFFF;
+    --text-main:     #1C2B18;
+    --text-muted:    #728A69;
+    --accent:        #4A7A3D;
+    --accent-light:  #E6EFE4;
+    --accent-hover:  #376030;
+    --accent-2:      #7A5C1E;
+    --danger:        #7A2E22;
+    --success:       #3A6B3A;
+    --border-color:  #D4E0CF;
+    --shadow-soft:   0 1px 3px rgba(28, 43, 24, 0.07);
+    --focus-ring:    0 0 0 3px rgba(74, 122, 61, 0.22);
+}
+
+/* ================================================================
+   TEMA OSCURO — Jardín de noche
+   Verde musgo profundo, negro orgánico cálido
+   ================================================================ */
+[data-theme="dark"] {
+    --bg-app:        #0D1410;
+    --bg-panel:      #141C11;
+    --bg-card:       #1B2618;
+    --text-main:     #CDE0C6;
+    --text-muted:    #567A4D;
+    --accent:        #6BBF58;
+    --accent-light:  #1A2D16;
+    --accent-hover:  #83D46E;
+    --accent-2:      #C4A84A;
+    --danger:        #C46050;
+    --success:       #5BA855;
+    --border-color:  #202E1C;
+    --shadow-soft:   0 1px 4px rgba(0,0,0,0.55);
+    --focus-ring:    0 0 0 3px rgba(107, 191, 88, 0.28);
+}
+
+/* ================================================================
+   TEMA DALTÓNICO — Accesible (Nielsen + WCAG 2.1)
+   ----------------------------------------------------------------
+   Paleta azul-amarillo: visible en deuteranopía, protanopía
+   y tritanopía. Contraste texto/fondo >= 4.5:1.
+   Redundancia visual: no se depende solo del color para comunicar
+   estado — se usan bordes, patrones y tipografía como refuerzo.
+   ================================================================ */
+[data-theme="daltonico"] {
+    --bg-app:        #F3F5FA;
+    --bg-panel:      #FFFFFF;
+    --bg-card:       #FFFFFF;
+    --text-main:     #18202E;
+    --text-muted:    #506088;
+    --accent:        #1A5FAB;
+    --accent-light:  #E0EAF8;
+    --accent-hover:  #134A88;
+    --accent-2:      #C48A0A;
+    --danger:        #18202E;
+    --success:       #1A5FAB;
+    --border-color:  #C8D0E4;
+    --shadow-soft:   0 1px 3px rgba(24, 32, 46, 0.08);
+    --focus-ring:    0 0 0 3px rgba(26, 95, 171, 0.28);
+}
+
+/* ================================================================
+   LÍNEA DE ACENTO SUPERIOR (indicador de tema activo)
+   ================================================================ */
+body::before {
+    content: '';
+    display: block;
+    height: 3px;
+    background: linear-gradient(90deg, var(--accent), var(--accent-2));
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    z-index: 9999;
+    transition: background 0.4s ease;
+}
+
+/* ================================================================
+   RESET Y BASE
+   ================================================================ */
+*, *::before, *::after {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    user-select: none;
+}
+
+body {
+    font-family: 'DM Sans', system-ui, sans-serif;
+    font-size: 14px;
+    background-color: var(--bg-app);
+    color: var(--text-main);
+    height: 100vh;
+    overflow: hidden;
+    -webkit-font-smoothing: antialiased;
+    transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+/* ================================================================
+   PANTALLAS
+   ================================================================ */
+.pantalla {
+    display: none;
+    height: 100vh;
+    width: 100vw;
+}
+
+.pantalla.activa {
+    display: block;
+    animation: aparecer 0.25s ease;
+}
+
+@keyframes aparecer {
+    from { opacity: 0; transform: translateY(5px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ================================================================
+   BOTONES
+   ================================================================ */
+.btn {
+    border: none;
+    border-radius: 4px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px;
+    font-weight: 500;
+    letter-spacing: 0.4px;
+    cursor: pointer;
+    padding: 10px 16px;
+    transition: background-color 0.15s, border-color 0.15s, transform 0.1s;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+}
+
+.btn:focus-visible {
+    outline: none;
+    box-shadow: var(--focus-ring);
+}
+
+.btn:active { transform: scale(0.97); }
+
+.btn-principal {
+    background-color: var(--accent);
+    color: #FFFFFF;
+    font-weight: 600;
+}
+.btn-principal:hover { background-color: var(--accent-hover); }
+
+.btn-secundario {
+    background-color: transparent;
+    color: var(--text-main);
+    border: 1px solid var(--border-color);
+}
+.btn-secundario:hover {
+    background-color: var(--accent-light);
+    border-color: var(--accent);
+    color: var(--accent);
+}
+
+.btn-success {
+    background-color: var(--success);
+    color: #fff;
+    font-weight: 600;
+}
+.btn-success:hover { filter: brightness(1.1); }
+
+[data-theme="daltonico"] .btn-success {
+    border: 2px solid var(--accent-2);
+}
+
+.btn-header {
+    background-color: transparent;
+    border: 1px solid var(--border-color);
+    color: var(--text-muted);
+    padding: 7px 13px;
+    margin-left: 10px;
+    border-radius: 4px;
+}
+.btn-header:hover {
+    background-color: var(--accent-light);
+    color: var(--accent);
+    border-color: var(--accent);
+}
+
+/* ================================================================
+   HEADER
+   ================================================================ */
+header {
+    background-color: var(--bg-panel);
+    border-bottom: 1px solid var(--border-color);
+    padding: 0 28px;
+    height: 56px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    box-shadow: var(--shadow-soft);
+}
+
+.header-title {
+    font-weight: 600;
+    font-size: 13px;
+    letter-spacing: 1.2px;
+    text-transform: uppercase;
+    color: var(--accent);
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.header-user {
+    font-size: 12px;
+    color: var(--text-muted);
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    letter-spacing: 0.3px;
+}
+
+/* ================================================================
+   LOGIN
+   ================================================================ */
+#login {
+    display: none;
+    align-items: center;
+    justify-content: center;
+    background: var(--bg-app);
+    background-image:
+        radial-gradient(ellipse at 10% 90%, rgba(74,122,61,0.10) 0%, transparent 50%),
+        radial-gradient(ellipse at 90% 10%, rgba(122,92,30,0.07) 0%, transparent 45%);
+}
+
+#login.activa { display: flex; }
+
+.login-box {
+    background: var(--bg-card);
+    padding: 48px 40px;
+    border-radius: 6px;
+    text-align: center;
+    width: 360px;
+    border: 1px solid var(--border-color);
+    box-shadow: var(--shadow-soft);
+}
+
+.login-box h2 {
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 1.8px;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 4px;
+}
+
+.login-box p {
+    color: var(--text-muted);
+    margin-bottom: 30px;
+    font-size: 12px;
+    font-weight: 300;
+}
+
+.pin-display {
+    font-family: 'DM Mono', monospace;
+    font-size: 28px;
+    letter-spacing: 18px;
+    margin-bottom: 28px;
+    height: 44px;
+    border-bottom: 2px solid var(--accent);
+    color: var(--accent);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding-left: 18px;
+}
+
+.teclado {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+}
+
+.teclado button {
+    padding: 16px;
+    font-size: 18px;
+    font-family: 'DM Mono', monospace;
+    font-weight: 400;
+    border-radius: 4px;
+    border: 1px solid var(--border-color);
+    background: var(--bg-app);
+    color: var(--text-main);
+    cursor: pointer;
+    transition: background 0.1s, border-color 0.1s, transform 0.08s;
+}
+
+.teclado button:hover {
+    background: var(--accent-light);
+    border-color: var(--accent);
+}
+
+.teclado button:active { transform: scale(0.94); }
+
+.teclado .btn-clear {
+    color: var(--danger);
+    border-color: var(--border-color);
+    background: transparent;
+    font-weight: 600;
+}
+
+/* Daltónico: borde grueso como señal, sin depender del rojo */
+[data-theme="daltonico"] .teclado .btn-clear {
+    color: var(--text-main);
+    border: 2px solid var(--text-main);
+    background: var(--bg-app);
+}
+
+.teclado .btn-ok {
+    background: var(--accent);
+    color: #FFFFFF;
+    border: none;
+    font-weight: 600;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px;
+    letter-spacing: 0.5px;
+}
+
+/* ================================================================
+   GRID DE MESAS
+   ================================================================ */
+.grid-mesas {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+    gap: 16px;
+    padding: 28px 32px;
+    height: calc(100vh - 56px - 64px);
+    overflow-y: auto;
+    align-content: start;
+}
+
+/* ── TARJETA BASE ─────────────────────────────────────────── */
+.mesa {
+    background: var(--bg-card);
+    border-radius: 10px;
+    border: 1.5px solid var(--border-color);
+    padding: 16px 16px 12px;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
+    position: relative;
+    overflow: hidden;
+    min-height: 148px;
+}
+
+.mesa::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+    background: var(--border-color);
+    transition: background 0.2s;
+}
+
+.mesa:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 24px rgba(0,0,0,0.09);
+    border-color: var(--accent);
+}
+
+.mesa:hover::before { background: var(--accent); }
+
+/* ── HEADER NÚMERO + BADGE ─────────────────────────────────── */
+.mesa-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.mesa-numero {
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 0.8px;
+    color: var(--text-main);
+    font-family: 'DM Mono', monospace;
+}
+
+.mesa-badge {
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 0.6px;
+    text-transform: uppercase;
+    padding: 3px 8px;
+    border-radius: 20px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    white-space: nowrap;
+}
+
+/* ── ESTADOS: COLORES ──────────────────────────────────────── */
+
+/* LIBRE — Verde sage */
+.mesa-libre::before          { background: var(--accent); }
+.badge-libre                  { background: var(--accent-light); color: var(--accent); border: 1px solid var(--accent); }
+
+/* OCUPADA — Ámbar/naranja cálido */
+.mesa-ocupada {
+    border-color: #C47E1A;
+}
+.mesa-ocupada::before         { background: #C47E1A; }
+.badge-ocupada                { background: rgba(196,126,26,0.12); color: #9A6010; border: 1px solid #C47E1A; }
+.mesa-ocupada .mesa-monto     { color: #9A6010; }
+
+/* EN COBRO — Azul proceso */
+.mesa-en-cobro {
+    border-color: #2B6CB0;
+}
+.mesa-en-cobro::before        { background: #2B6CB0; }
+.badge-en-cobro               { background: rgba(43,108,176,0.12); color: #2B6CB0; border: 1px solid #2B6CB0; }
+
+/* RESERVADA — Violeta suave */
+.mesa-reservada {
+    border-color: #7B5EA7;
+}
+.mesa-reservada::before       { background: #7B5EA7; }
+.badge-reservada              { background: rgba(123,94,167,0.12); color: #7B5EA7; border: 1px solid #7B5EA7; }
+
+/* ENTREGADO — Verde fuerte: pedido en mesa, listo para cobrar */
+.mesa-ocupada.alerta-entregado {
+    border-color: #2E7040;
+    box-shadow: 0 0 0 2px rgba(46,112,64,0.18);
+}
+.badge-entregado              { background: rgba(46,112,64,0.13); color: #2E7040; border: 1px solid #2E7040; }
+
+/* Botones de acción rápida en mesa entregada */
+.mesa-acciones-entregado {
+    display: flex;
+    gap: 6px;
+    margin-top: 8px;
+    padding-top: 8px;
+    border-top: 1px solid var(--border-color);
+}
+.btn-mesa-algo-mas {
+    flex: 1;
+    padding: 7px 6px;
+    border-radius: 6px;
+    border: 1px solid var(--accent);
+    background: var(--accent-light);
+    color: var(--accent);
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: .3px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+    transition: all .15s;
+    font-family: 'DM Sans', sans-serif;
+}
+.btn-mesa-algo-mas:hover { background: var(--accent); color: #fff; }
+
+.btn-mesa-cobrar-ya {
+    flex: 1;
+    padding: 7px 6px;
+    border-radius: 6px;
+    border: 1px solid #2B6CB0;
+    background: rgba(43,108,176,0.10);
+    color: #2B6CB0;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: .3px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+    transition: all .15s;
+    font-family: 'DM Sans', sans-serif;
+}
+.btn-mesa-cobrar-ya:hover { background: #2B6CB0; color: #fff; }
+
+/* Daltónico: patrones de relleno además del color */
+[data-theme="daltonico"] .mesa-ocupada {
+    background-image: repeating-linear-gradient(
+        45deg, transparent, transparent 8px,
+        rgba(26,95,171,0.07) 8px, rgba(26,95,171,0.07) 16px
+    );
+}
+[data-theme="daltonico"] .mesa-en-cobro {
+    background-image: repeating-linear-gradient(
+        -45deg, transparent, transparent 8px,
+        rgba(26,95,171,0.07) 8px, rgba(26,95,171,0.07) 16px
+    );
+}
+
+/* ── TOTAL / CONSUMO ───────────────────────────────────────── */
+.mesa-total {
+    margin-top: 2px;
+}
+
+.mesa-monto {
+    font-family: 'DM Mono', monospace;
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--accent-2);
+}
+
+.mesa-disponible {
+    font-size: 11px;
+    color: var(--text-muted);
+    letter-spacing: 0.4px;
+}
+
+/* ── TIEMPO DE OCUPACIÓN ────────────────────────────────────── */
+.mesa-tiempo {
+    font-size: 10px;
+    color: var(--text-muted);
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-family: 'DM Mono', monospace;
+}
+
+.mesa-tiempo-alerta {
+    color: #C0392B;
+    font-weight: 600;
+    animation: parpadeo-suave 2s infinite;
+}
+
+@keyframes parpadeo-suave {
+    0%, 100% { opacity: 1; }
+    50%       { opacity: 0.6; }
+}
+
+.alerta-tiempo {
+    border-color: #C0392B !important;
+    box-shadow: 0 0 0 2px rgba(192,57,43,0.15);
+}
+
+.alerta-tiempo::before { background: #C0392B !important; }
+
+/* ── RESERVA INFO ───────────────────────────────────────────── */
+.mesa-reserva-info {
+    font-size: 10px;
+    color: #7B5EA7;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    letter-spacing: 0.3px;
+}
+
+/* ── RESUMEN DE CONSUMO ─────────────────────────────────────── */
+.mesa-consumo {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    flex: 1;
+}
+
+.mesa-consumo span {
+    font-size: 10px;
+    color: var(--text-muted);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    line-height: 1.4;
+}
+
+.mesa-consumo-mas {
+    font-size: 9px !important;
+    color: var(--accent) !important;
+    font-weight: 600;
+}
+
+/* ── ACCIONES RÁPIDAS ───────────────────────────────────────── */
+.mesa-acciones {
+    display: flex;
+    gap: 6px;
+    margin-top: auto;
+    padding-top: 6px;
+    border-top: 1px solid var(--border-color);
+}
+
+.btn-mesa-accion {
+    width: 28px;
+    height: 28px;
+    border-radius: 6px;
+    border: 1px solid var(--border-color);
+    background: var(--bg-app);
+    color: var(--text-muted);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    transition: all 0.15s;
+}
+
+.btn-reservar:hover         { background: rgba(123,94,167,0.12); border-color: #7B5EA7; color: #7B5EA7; }
+.btn-limpiar-reserva:hover  { background: rgba(192,57,43,0.1); border-color: #C0392B; color: #C0392B; }
+
+/* ── LEYENDA DE ESTADOS ─────────────────────────────────────── */
+.leyenda-mesas {
+    display: flex;
+    align-items: center;
+    gap: 18px;
+    padding: 0 32px;
+    padding-bottom: 0;
+    flex-wrap: wrap;
+}
+
+.leyenda-item {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    font-size: 11px;
+    color: var(--text-muted);
+    font-weight: 500;
+    letter-spacing: 0.3px;
+}
+
+.leyenda-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+.leyenda-dot-libre     { background: var(--accent); }
+.leyenda-dot-ocupada   { background: #C47E1A; }
+.leyenda-dot-cobro     { background: #2B6CB0; }
+.leyenda-dot-reservada { background: #7B5EA7; }
+.leyenda-dot-alerta    { background: #C0392B; }
+
+/* ================================================================
+   MODAL RESERVA — CALENDARIO COMPLETO
+   ================================================================ */
+
+.reserva-modal-caja {
+    width: 780px;
+    max-width: 97vw;
+    max-height: 94vh;
+    overflow-y: auto;
+    padding: 0;
+    border-radius: 14px;
+}
+
+/* ── Encabezado ── */
+.reserva-header {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 20px 24px 16px;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.reserva-header-icon {
+    width: 44px; height: 44px;
+    border-radius: 10px;
+    background: rgba(123,94,167,0.12);
+    border: 1.5px solid #7B5EA7;
+    color: #7B5EA7;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px; flex-shrink: 0;
+}
+
+.reserva-header-titulo {
+    font-size: 14px;
+    font-weight: 700;
+    letter-spacing: 0.8px;
+    color: var(--text-main);
+}
+
+.reserva-header-sub {
+    font-size: 11px;
+    color: var(--text-muted);
+    margin-top: 2px;
+}
+
+.reserva-close-btn {
+    margin-left: auto;
+    width: 32px; height: 32px;
+    border-radius: 8px;
+    border: 1px solid var(--border-color);
+    background: transparent;
+    color: var(--text-muted);
+    cursor: pointer;
+    font-size: 13px;
+    display: flex; align-items: center; justify-content: center;
+    transition: all 0.15s;
+}
+.reserva-close-btn:hover { background: var(--bg-app); color: var(--text-main); }
+
+/* ── Banner reserva actual / error ── */
+.reserva-actual-banner {
+    margin: 12px 24px 0;
+    padding: 10px 14px;
+    background: rgba(123,94,167,0.08);
+    border: 1px solid #7B5EA7;
+    border-radius: 8px;
+    font-size: 12px;
+    color: #7B5EA7;
+    display: flex;
+    align-items: center;
+    gap: 9px;
+}
+
+.reserva-error-banner {
+    background: rgba(192,57,43,0.08) !important;
+    border-color: #C0392B !important;
+    color: #C0392B !important;
+}
+
+/* ── Layout dos columnas ── */
+.reserva-body {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0;
+    padding: 20px 24px;
+    gap: 24px;
+}
+
+/* ── COLUMNA CALENDARIO ── */
+.reserva-col-cal {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+/* Navegación mes */
+.cal-nav {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+}
+
+.cal-nav-btn {
+    width: 32px; height: 32px;
+    border-radius: 8px;
+    border: 1px solid var(--border-color);
+    background: var(--bg-app);
+    color: var(--text-muted);
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 12px;
+    transition: all 0.15s;
+}
+.cal-nav-btn:hover { border-color: #7B5EA7; color: #7B5EA7; background: rgba(123,94,167,0.08); }
+
+.cal-mes-label {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--text-main);
+    letter-spacing: 0.3px;
+}
+
+/* Días de la semana */
+.cal-semana {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    text-align: center;
+    gap: 2px;
+}
+
+.cal-semana span {
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    color: var(--text-muted);
+    padding: 4px 0;
+    text-transform: uppercase;
+}
+
+/* Grid de días */
+.cal-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 3px;
+}
+
+.cal-dia {
+    aspect-ratio: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    font-weight: 500;
+    border-radius: 8px;
+    cursor: pointer;
+    position: relative;
+    color: var(--text-main);
+    transition: all 0.12s;
+    border: 1.5px solid transparent;
+}
+
+.cal-dia:hover:not(.cal-dia-pasado):not(.cal-dia-vacio) {
+    background: rgba(123,94,167,0.1);
+    border-color: #7B5EA7;
+    color: #7B5EA7;
+}
+
+.cal-dia-vacio { cursor: default; }
+
+.cal-dia-pasado {
+    color: var(--border-color);
+    cursor: not-allowed;
+}
+
+.cal-dia-hoy {
+    font-weight: 700;
+    color: var(--accent);
+    border-color: var(--accent);
+}
+
+.cal-dia-selec {
+    background: #7B5EA7 !important;
+    border-color: #7B5EA7 !important;
+    color: #fff !important;
+    font-weight: 700;
+    box-shadow: 0 2px 8px rgba(123,94,167,0.35);
+}
+
+.cal-dia-reservado { font-weight: 600; }
+
+.cal-dia-dot {
+    position: absolute;
+    bottom: 3px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 4px; height: 4px;
+    border-radius: 50%;
+    background: #C47E1A;
+}
+
+.cal-dia-selec .cal-dia-dot { background: rgba(255,255,255,0.7); }
+
+/* ── Selector hora ── */
+.cal-hora-section {
+    background: var(--bg-app);
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+    padding: 14px 16px;
+}
+
+.cal-hora-label {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    color: var(--text-muted);
+    margin-bottom: 12px;
+    text-transform: uppercase;
+    display: flex;
+    align-items: center;
+    gap: 7px;
+}
+
+.cal-hora-controles {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    justify-content: center;
+}
+
+.cal-hora-picker {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+}
+
+.cal-hora-btn {
+    width: 28px; height: 28px;
+    border-radius: 7px;
+    border: 1px solid var(--border-color);
+    background: var(--bg-card);
+    color: var(--text-muted);
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 10px;
+    transition: all 0.12s;
+}
+.cal-hora-btn:hover { border-color: #7B5EA7; color: #7B5EA7; }
+
+.cal-hora-valor {
+    font-family: 'DM Mono', monospace;
+    font-size: 26px;
+    font-weight: 700;
+    color: var(--text-main);
+    min-width: 40px;
+    text-align: center;
+    line-height: 1;
+}
+
+.cal-hora-sep {
+    font-size: 24px;
+    font-weight: 700;
+    color: var(--text-muted);
+    margin-top: -4px;
+}
+
+.cal-ampm-picker {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.cal-ampm-btn {
+    padding: 6px 12px;
+    border-radius: 6px;
+    border: 1.5px solid var(--border-color);
+    background: transparent;
+    color: var(--text-muted);
+    font-size: 11px;
+    font-weight: 700;
+    cursor: pointer;
+    font-family: 'DM Sans', sans-serif;
+    transition: all 0.12s;
+}
+.cal-ampm-btn.activo {
+    background: #7B5EA7;
+    border-color: #7B5EA7;
+    color: #fff;
+}
+.cal-ampm-btn:not(.activo):hover { border-color: #7B5EA7; color: #7B5EA7; }
+
+/* ── COLUMNA INFO CLIENTE ── */
+.reserva-col-info {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+/* Resumen selección */
+.reserva-resumen {
+    background: var(--bg-app);
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+    padding: 14px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.reserva-resumen-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 13px;
+    color: var(--text-muted);
+    padding: 6px 10px;
+    border-radius: 7px;
+    border: 1.5px solid transparent;
+    transition: all 0.15s;
+}
+
+.reserva-resumen-item i {
+    font-size: 14px;
+    color: #7B5EA7;
+    width: 18px;
+    text-align: center;
+}
+
+.reserva-resumen-item.resumen-ok {
+    background: rgba(123,94,167,0.06);
+    border-color: rgba(123,94,167,0.2);
+    color: var(--text-main);
+    font-weight: 600;
+}
+
+/* Formulario cliente */
+.reserva-form {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.reserva-label {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.6px;
+    color: var(--text-muted);
+    text-transform: uppercase;
+}
+
+.reserva-input {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1.5px solid var(--border-color);
+    border-radius: 8px;
+    background: var(--bg-app);
+    color: var(--text-main);
+    font-size: 13px;
+    font-family: 'DM Sans', sans-serif;
+    transition: border-color 0.15s;
+    outline: none;
+}
+.reserva-input:focus { border-color: #7B5EA7; box-shadow: 0 0 0 3px rgba(123,94,167,0.12); }
+
+.reserva-textarea { resize: none; }
+
+/* Personas */
+.reserva-personas-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.reserva-pax-btn {
+    width: 32px; height: 32px;
+    border-radius: 8px;
+    border: 1.5px solid var(--border-color);
+    background: var(--bg-app);
+    color: var(--text-muted);
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 12px;
+    transition: all 0.12s;
+}
+.reserva-pax-btn:hover { border-color: #7B5EA7; color: #7B5EA7; }
+
+.reserva-pax-val {
+    font-family: 'DM Mono', monospace;
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--text-main);
+    min-width: 32px;
+    text-align: center;
+}
+
+.reserva-pax-label {
+    font-size: 12px;
+    color: var(--text-muted);
+}
+
+/* Configuración de notificación */
+.reserva-notif-config {
+    background: var(--bg-app);
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+    padding: 12px 14px;
+}
+
+.reserva-notif-opciones {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+}
+
+.reserva-notif-btn {
+    padding: 5px 12px;
+    border-radius: 20px;
+    border: 1.5px solid var(--border-color);
+    background: transparent;
+    color: var(--text-muted);
+    font-size: 11px;
+    font-weight: 600;
+    cursor: pointer;
+    font-family: 'DM Sans', sans-serif;
+    transition: all 0.12s;
+}
+.reserva-notif-btn.activo {
+    background: #7B5EA7;
+    border-color: #7B5EA7;
+    color: #fff;
+}
+.reserva-notif-btn:not(.activo):hover { border-color: #7B5EA7; color: #7B5EA7; }
+
+/* ── Footer ── */
+.reserva-footer {
+    display: flex;
+    gap: 10px;
+    padding: 16px 24px 20px;
+    border-top: 1px solid var(--border-color);
+}
+
+/* ── Tarjeta mesa: cliente en reserva ── */
+.mesa-reserva-cliente {
+    font-size: 10px;
+    color: #7B5EA7;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* ================================================================
+   NOTIFICACIÓN FLOTANTE DE RESERVA
+   ================================================================ */
+.notif-reserva {
+    position: fixed;
+    top: 72px;
+    right: 20px;
+    z-index: 4000;
+    animation: slideInRight 0.35s ease;
+}
+
+.notif-reserva-inner {
+    background: var(--bg-card);
+    border: 2px solid #7B5EA7;
+    border-radius: 12px;
+    padding: 14px 16px;
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    box-shadow: 0 8px 28px rgba(0,0,0,0.18);
+    min-width: 300px;
+    max-width: 380px;
+}
+
+.notif-reserva-icono {
+    width: 40px; height: 40px;
+    border-radius: 50%;
+    background: rgba(123,94,167,0.12);
+    color: #7B5EA7;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 16px;
+    flex-shrink: 0;
+    animation: campana 0.5s ease 0.2s;
+}
+
+@keyframes campana {
+    0%,100% { transform: rotate(0); }
+    25%      { transform: rotate(-15deg); }
+    75%      { transform: rotate(15deg); }
+}
+
+.notif-reserva-texto {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+}
+
+.notif-reserva-texto strong {
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--text-main);
+    line-height: 1.3;
+}
+
+.notif-reserva-texto span {
+    font-size: 11px;
+    color: var(--text-muted);
+    line-height: 1.4;
+}
+
+.notif-reserva-close {
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    cursor: pointer;
+    font-size: 13px;
+    padding: 3px;
+    border-radius: 4px;
+    flex-shrink: 0;
+}
+.notif-reserva-close:hover { color: var(--text-main); }
+
+/* ── Toast de confirmación de guardado ── */
+.toast-reserva {
+    position: fixed;
+    bottom: 28px;
+    left: 50%;
+    transform: translateX(-50%) translateY(80px);
+    background: #7B5EA7;
+    color: #fff;
+    padding: 11px 22px;
+    border-radius: 8px;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.3px;
+    z-index: 4001;
+    pointer-events: none;
+    transition: transform 0.3s ease;
+    box-shadow: 0 4px 16px rgba(123,94,167,0.35);
+}
+.toast-reserva.show { transform: translateX(-50%) translateY(0); }
+
+
+
+
+/* ================================================================
+   POS: LAYOUT
+   ================================================================ */
+.layout-pos {
+    display: grid;
+    grid-template-columns: 215px 1fr 340px;
+    height: calc(100vh - 56px);
+}
+
+/* ================================================================
+   CATEGORÍAS
+   ================================================================ */
+.categorias {
+    background: var(--bg-panel);
+    border-right: 1px solid var(--border-color);
+    padding: 16px 10px;
+    overflow-y: auto;
+}
+
+.cat-btn {
+    width: 100%;
+    padding: 11px 13px;
+    margin-bottom: 3px;
+    border: 1px solid transparent;
+    border-radius: 4px;
+    background: transparent;
+    color: var(--text-muted);
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.6px;
+    text-transform: uppercase;
+    cursor: pointer;
+    text-align: left;
+    transition: all 0.15s ease;
+    display: flex;
+    align-items: center;
+    gap: 11px;
+    font-family: 'DM Sans', sans-serif;
+}
+
+.cat-btn i {
+    font-size: 14px;
+    width: 18px;
+    text-align: center;
+    opacity: 0.6;
+    flex-shrink: 0;
+}
+
+.cat-btn:hover {
+    background: var(--accent-light);
+    color: var(--accent);
+}
+
+.cat-btn.activa {
+    background: var(--accent-light);
+    color: var(--accent);
+    border: 1px solid var(--accent);
+    font-weight: 600;
+}
+
+.cat-btn.activa i { opacity: 1; }
+
+/* Daltónico: borde izquierdo grueso como señal adicional */
+[data-theme="daltonico"] .cat-btn.activa {
+    border-left-width: 4px;
+}
+
+/* ================================================================
+   PRODUCTOS
+   ================================================================ */
+.productos {
+    padding: 20px 22px;
+    overflow-y: auto;
+    background: var(--bg-app);
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 14px;
+    align-content: start;
+}
+
+.prod-card {
+    background: var(--bg-card);
+    padding: 18px 16px 16px;
+    border-radius: 8px;
+    text-align: left;
+    cursor: pointer;
+    border: 1px solid var(--border-color);
+    transition: border-color 0.15s, transform 0.15s, background-color 0.15s, box-shadow 0.15s;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    min-height: 120px;
+    height: auto;
+    position: relative;
+    overflow: hidden;
+}
+
+.prod-card::before {
+    content: '';
+    position: absolute;
+    left: 0; top: 0; bottom: 0;
+    width: 3px;
+    background: var(--border-color);
+    transition: background 0.15s;
+    border-radius: 8px 0 0 8px;
+}
+
+.prod-card:hover {
+    border-color: var(--accent);
+    background: var(--accent-light);
+    transform: translateY(-3px);
+    box-shadow: 0 4px 12px rgba(74, 122, 61, 0.12);
+}
+
+.prod-card:hover::before { background: var(--accent); }
+.prod-card:active { transform: scale(0.97); }
+
+.prod-card h4 {
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--text-main);
+    line-height: 1.5;
+    margin-bottom: 8px;
+    white-space: normal;
+    word-break: break-word;
+    flex: 1;
+}
+
+.prod-card p {
+    color: var(--accent-2);
+    font-weight: 700;
+    font-size: 16px;
+    font-family: 'DM Mono', monospace;
+    margin-top: 10px;
+    flex-shrink: 0;
+}
+
+[data-theme="daltonico"] .prod-card p { color: var(--accent); }
+
+.prod-card small {
+    font-size: 11.5px;
+    color: var(--text-muted);
+    line-height: 1.4;
+    display: block;
+    margin-top: 6px;
+    font-style: italic;
+}
+
+/* ================================================================
+   COMANDA
+   ================================================================ */
+.comanda {
+    background: var(--bg-panel);
+    display: flex;
+    flex-direction: column;
+    border-left: 1px solid var(--border-color);
+    height: 100%;
+    overflow: hidden;
+}
+
+.comanda-header {
+    padding: 15px 18px;
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 1.6px;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    border-bottom: 1px solid var(--border-color);
+}
+
+.comanda-lista {
+    flex: 1 1 auto;
+    overflow-y: auto;
+    padding: 6px 10px;
+    height: 0;
+}
+
+.item-comanda {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    padding: 11px 8px;
+    border-bottom: 1px solid var(--border-color);
+    margin-bottom: 2px;
+}
+
+.item-info strong {
+    font-size: 13px;
+    color: var(--text-main);
+    font-weight: 400;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.btn-qty {
+    width: 26px;
+    height: 26px;
+    border-radius: 3px;
+    border: 1px solid var(--border-color);
+    background: var(--bg-card);
+    color: var(--text-main);
+    font-weight: 500;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    transition: background 0.1s, border-color 0.1s;
+}
+
+.btn-qty:hover {
+    background: var(--accent-light);
+    border-color: var(--accent);
+    color: var(--accent);
+}
+
+.comanda-total {
+    padding: 16px 18px;
+    border-top: 1px solid var(--border-color);
+    background: var(--bg-card);
+}
+
+.total-texto {
+    display: flex;
+    justify-content: space-between;
+    font-size: 19px;
+    font-weight: 600;
+    margin-bottom: 14px;
+    color: var(--text-main);
+    font-family: 'DM Mono', monospace;
+}
+
+/* ================================================================
+   SCROLLBAR
+   ================================================================ */
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border-color); border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: var(--accent); }
+
+/* ================================================================
+   BÚSQUEDA
+   ================================================================ */
+.search-box {
+    display: flex;
+    align-items: center;
+    background: var(--bg-app);
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    padding: 0 12px;
+    margin-right: 12px;
+    height: 36px;
+    transition: border-color 0.15s;
+}
+
+.search-box:focus-within {
+    border-color: var(--accent);
+    box-shadow: var(--focus-ring);
+}
+
+.search-box i {
+    color: var(--text-muted);
+    font-size: 13px;
+    margin-right: 8px;
+}
+
+.search-box input {
+    background: transparent;
+    border: none;
+    color: var(--text-main);
+    outline: none;
+    width: 200px;
+    font-size: 13px;
+    font-family: 'DM Sans', sans-serif;
+}
+
+.search-box input::placeholder {
+    color: var(--text-muted);
+    font-weight: 300;
+}
+
+/* ================================================================
+   MODALES
+   ================================================================ */
+.modal-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(8, 14, 6, 0.55);
+    backdrop-filter: blur(4px);
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+}
+
+.modal-overlay.activo {
+    display: flex;
+    animation: aparecer 0.2s ease;
+}
+
+.modal-caja {
+    background: var(--bg-panel);
+    padding: 26px 26px 22px;
+    border-radius: 6px;
+    border: 1px solid var(--border-color);
+    box-shadow: 0 20px 60px rgba(0,0,0,0.18);
+    color: var(--text-main);
+    width: 480px;
+    max-width: 92vw;
+    max-height: 82vh;
+    overflow-y: auto;
+}
+
+.modal-caja h2 {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 1.6px;
+    text-transform: uppercase;
+    color: var(--accent);
+    border-bottom: 1px solid var(--border-color);
+    padding-bottom: 13px;
+    margin-bottom: 16px;
+}
+
+.modal-caja h3 {
+    margin: 12px 0 7px;
+    color: var(--text-main);
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.modal-caja input[type="text"],
+.modal-caja input[type="number"] {
+    background: var(--bg-app);
+    border: 1px solid var(--border-color);
+    color: var(--text-main);
+    border-radius: 4px;
+    padding: 10px 12px;
+    font-size: 13px;
+    font-family: 'DM Sans', sans-serif;
+    outline: none;
+    transition: border-color 0.15s, box-shadow 0.15s;
+    width: 100%;
+    margin-bottom: 13px;
+}
+
+.modal-caja input:focus {
+    border-color: var(--accent);
+    box-shadow: var(--focus-ring);
+}
+
+.modal-caja label {
+    color: var(--text-muted);
+    font-size: 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    margin-bottom: 4px;
+}
+
+.modal-caja input[type="checkbox"] {
+    accent-color: var(--accent);
+    width: 15px;
+    height: 15px;
+}
+
+.modal-caja select {
+    width: 100%;
+    background: var(--bg-app);
+    border: 1px solid var(--border-color);
+    color: var(--text-main);
+    padding: 10px 12px;
+    border-radius: 4px;
+    margin-bottom: 13px;
+    outline: none;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px;
+}
+
+.modal-caja select:focus {
+    border-color: var(--accent);
+    box-shadow: var(--focus-ring);
+}
+
+/* ================================================================
+   TICKET
+   ================================================================ */
+#ticket-visual {
+    background: #FFFFFF !important;
+    color: #111 !important;
+    border-radius: 0 !important;
+    font-family: 'DM Mono', 'Courier New', monospace !important;
+    position: relative;
+}
+
+/* ================================================================
+   DIVISIÓN DE CUENTAS
+   ================================================================ */
+.opcion-division {
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    padding: 14px 15px;
+    margin-bottom: 10px;
+    cursor: pointer;
+    transition: border-color 0.15s, background 0.15s;
+}
+
+.opcion-division:hover {
+    border-color: var(--accent);
+    background: var(--accent-light);
+}
+
+.opcion-division.seleccionada {
+    border-color: var(--accent);
+    border-width: 2px;
+    background: var(--accent-light);
+}
+
+.producto-seleccionable {
+    display: flex;
+    align-items: center;
+    padding: 9px 10px;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.producto-seleccionable:hover { background: var(--accent-light); }
+
+.producto-seleccionable.asignado-otra { opacity: 0.4; }
+
+[data-theme="daltonico"] .producto-seleccionable.asignado-otra {
+    text-decoration: line-through;
+    text-decoration-color: var(--text-muted);
+    opacity: 0.45;
+}
+
+.persona-tab {
+    display: flex;
+    align-items: center;
+    padding: 10px 12px;
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    margin-bottom: 8px;
+}
+
+.persona-tab .persona-numero {
+    font-weight: 600;
+    margin-right: 14px;
+    color: var(--accent);
+    font-family: 'DM Mono', monospace;
+}
+
+.persona-total {
+    margin-left: auto;
+    font-weight: 600;
+    font-family: 'DM Mono', monospace;
+}
+
+.split-summary {
+    margin-top: 15px;
+    padding: 13px;
+    background: var(--bg-app);
+    border-radius: 4px;
+}
+
+.split-item {
+    display: flex;
+    justify-content: space-between;
+    padding: 7px 0;
+    border-bottom: 1px dashed var(--border-color);
+    font-size: 13px;
+}
+
+.persona-indicador {
+    display: inline-block;
+    padding: 3px 9px;
+    background: var(--accent);
+    color: #FFFFFF;
+    border-radius: 3px;
+    font-weight: 600;
+    font-size: 11px;
+    margin-right: 8px;
+    letter-spacing: 0.3px;
+}
+
+[data-theme="daltonico"] .persona-indicador {
+    border: 2px solid var(--accent-2);
+}
+
+.barra-progreso {
+    height: 2px;
+    background: var(--border-color);
+    border-radius: 2px;
+    margin: 13px 0;
+    overflow: hidden;
+}
+
+.progreso {
+    height: 100%;
+    background: var(--accent);
+    width: 0%;
+    transition: width 0.3s ease;
+}
+
+.mensaje-exito {
+    background: var(--success);
+    color: #fff;
+    padding: 10px 13px;
+    border-radius: 4px;
+    margin: 8px 0;
+    text-align: center;
+    font-size: 13px;
+    animation: aparecer 0.25s ease;
+    font-weight: 500;
+}
+
+[data-theme="daltonico"] .mensaje-exito {
+    border-top: 3px solid var(--accent-2);
+}
+
+/* ================================================================
+   ETIQUETA DE MODO ACTIVO (Krug: el usuario sabe en qué modo está)
+   ================================================================ */
+[data-theme="daltonico"] body::after {
+    content: '◉ Modo accesible';
+    position: fixed;
+    bottom: 14px;
+    right: 16px;
+    font-size: 10px;
+    font-family: 'DM Sans', sans-serif;
+    color: var(--accent);
+    background: var(--bg-card);
+    border: 1px solid var(--accent);
+    border-radius: 3px;
+    padding: 4px 9px;
+    letter-spacing: 0.5px;
+    z-index: 9000;
+    pointer-events: none;
+}
+
+/* ================================================================
+   ENCABEZADOS DE SECCIÓN EN PRODUCTOS
+   ================================================================ */
+.seccion-header {
+    grid-column: 1 / -1;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 0 6px;
+    margin-top: 6px;
+}
+
+.seccion-header span {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: var(--accent);
+    white-space: nowrap;
+}
+
+.seccion-header::after {
+    content: '';
+    display: block;
+    flex: 1;
+    height: 1px;
+    background: var(--border-color);
+}
+
+/* ================================================================
+   BOTONES CHIP (EXTRAS / OPCIONES)
+   ================================================================ */
+.chips-group {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 7px;
+    margin-bottom: 4px;
+}
+
+.chip {
+    display: inline-flex;
+    align-items: center;
+    padding: 6px 12px;
+    border-radius: 20px;
+    border: 1px solid var(--border-color);
+    background: var(--bg-app);
+    color: var(--text-main);
+    font-size: 12px;
+    font-family: 'DM Sans', sans-serif;
+    font-weight: 400;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    user-select: none;
+}
+
+.chip:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+    background: var(--accent-light);
+}
+
+.chip.chip-on {
+    background: var(--accent);
+    color: #fff;
+    border-color: var(--accent);
+    font-weight: 500;
+}
+
+[data-theme="dark"] .chip.chip-on { color: #0D1410; }
+
+.chip-extra.chip-on {
+    background: var(--accent-2);
+    border-color: var(--accent-2);
+    color: #fff;
+}
+
+/* ================================================================
+   BOTONES DE CATEGORÍA ESPECIALES
+   ================================================================ */
+.cat-btn-postre {
+    color: var(--accent-2) !important;
+}
+
+.cat-btn-postre.activa {
+    border-color: var(--accent-2) !important;
+    color: var(--accent-2) !important;
+    background: rgba(122, 92, 30, 0.08) !important;
+}
+
+.cat-btn-admin {
+    font-size: 10px !important;
+    color: var(--text-muted) !important;
+    border: 1px dashed var(--border-color) !important;
+    margin-top: 2px;
+}
+
+.cat-btn-admin:hover {
+    background: var(--accent-light) !important;
+    color: var(--accent) !important;
+    border-color: var(--accent) !important;
+    border-style: solid !important;
+}
+
+/* ================================================================
+   PANEL ADMIN INLINE (Postres y Bebidas de Temporada)
+   ================================================================ */
+.admin-panel-inline {
+    grid-column: 1 / -1;
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    padding: 16px 18px;
+    margin-bottom: 16px;
+}
+
+.admin-panel-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 1.2px;
+    text-transform: uppercase;
+    color: var(--accent-2);
+    margin-bottom: 14px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.admin-panel-header i { font-size: 14px; }
+
+.admin-badge {
+    margin-left: auto;
+    background: var(--accent-2);
+    color: #fff;
+    font-size: 9px;
+    padding: 2px 7px;
+    border-radius: 10px;
+    letter-spacing: 0.8px;
+}
+
+[data-theme="daltonico"] .admin-badge {
+    background: var(--accent-2);
+}
+
+.admin-form-row {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 12px;
+    align-items: center;
+}
+
+.admin-input {
+    flex: 1;
+    background: var(--bg-app);
+    border: 1px solid var(--border-color);
+    color: var(--text-main);
+    border-radius: 4px;
+    padding: 8px 11px;
+    font-size: 13px;
+    font-family: 'DM Sans', sans-serif;
+    outline: none;
+    transition: border-color 0.15s;
+}
+
+.admin-input:focus { border-color: var(--accent-2); }
+
+.admin-input-precio {
+    flex: 0 0 90px;
+    font-family: 'DM Mono', monospace;
+}
+
+.admin-btn-add {
+    flex-shrink: 0;
+    background: var(--accent-2) !important;
+    font-size: 12px !important;
+    padding: 8px 14px !important;
+    white-space: nowrap;
+}
+
+.admin-btn-add:hover { filter: brightness(1.1); }
+
+.admin-items-lista {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    max-height: 180px;
+    overflow-y: auto;
+}
+
+.admin-empty {
+    font-size: 12px;
+    color: var(--text-muted);
+    padding: 8px 0;
+    font-style: italic;
+}
+
+.admin-item-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 7px 0;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.admin-item-nombre {
+    flex: 1;
+    font-size: 13px;
+    color: var(--text-main);
+}
+
+.admin-item-precio {
+    font-family: 'DM Mono', monospace;
+    font-size: 12px;
+    color: var(--accent-2);
+    font-weight: 600;
+}
+
+.admin-btn-del {
+    background: transparent;
+    border: none;
+    color: var(--text-muted);
+    cursor: pointer;
+    font-size: 13px;
+    padding: 2px 4px;
+    border-radius: 3px;
+    transition: color 0.15s, background 0.15s;
+}
+
+.admin-btn-del:hover {
+    color: var(--danger);
+    background: rgba(122, 46, 34, 0.08);
+}
+
+/* Botón de temporada en dorado */
+.cat-btn-postre {
+    color: var(--accent-2) !important;
+}
+
+.cat-btn-postre.activa {
+    border-color: var(--accent-2) !important;
+    color: var(--accent-2) !important;
+    background: rgba(122, 92, 30, 0.08) !important;
+}
+
+[data-theme="dark"] .cat-btn-postre.activa {
+    background: rgba(196, 168, 74, 0.1) !important;
+}
+
+/* ================================================================
+   BOTONES DESTINO (Aquí / Para llevar)
+   ================================================================ */
+.btn-destino {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 14px 10px;
+    border: 2px solid var(--border-color);
+    border-radius: 6px;
+    background: var(--bg-app);
+    color: var(--text-muted);
+    cursor: pointer;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px;
+    font-weight: 500;
+    transition: all 0.15s ease;
+}
+
+.btn-destino i { font-size: 22px; }
+.btn-destino small { font-size: 10px; font-weight: 400; }
+
+.btn-destino:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+    background: var(--accent-light);
+}
+
+.btn-destino.activo {
+    border-color: var(--accent);
+    background: var(--accent-light);
+    color: var(--accent);
+    font-weight: 600;
+}
+
+#btn-llevar.activo {
+    border-color: var(--accent-2);
+    background: rgba(122,92,30,0.08);
+    color: var(--accent-2);
+}
+
+/* ================================================================
+   BOTONES DESTINO (Para comer aquí / Para llevar)
+   ================================================================ */
+.btn-destino {
+    flex: 1;
+    padding: 12px 10px;
+    border-radius: 6px;
+    border: 2px solid var(--border-color);
+    background: var(--bg-app);
+    color: var(--text-muted);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 5px;
+    transition: all 0.15s ease;
+    text-align: center;
+}
+
+.btn-destino i { font-size: 20px; opacity: 0.5; }
+
+.btn-destino:hover {
+    border-color: var(--accent);
+    color: var(--text-main);
+}
+
+.btn-destino.activo {
+    border-color: var(--accent);
+    background: var(--accent-light);
+    color: var(--accent);
+    font-weight: 600;
+}
+
+.btn-destino.activo i { opacity: 1; }
+
+.btn-destino#btn-llevar.activo {
+    border-color: var(--accent-2);
+    background: rgba(122, 92, 30, 0.08);
+    color: var(--accent-2);
+}
+
+.btn-destino small {
+    font-size: 10px;
+    opacity: 0.7;
+    display: block;
+}
+
+/* ================================================================
+   MODAL ORDEN — ASIGNACIÓN BARRA / COCINA
+   ================================================================ */
+
+.modal-orden-caja {
+    width: 760px;
+    max-width: 96vw;
+    max-height: 90vh;
+    overflow-y: auto;
+    padding: 24px 26px 20px;
+}
+
+.modal-orden-header {
+    margin-bottom: 16px;
+    padding-bottom: 14px;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.modal-orden-titulo {
+    font-size: 15px;
+    font-weight: 700;
+    letter-spacing: 0.6px;
+    color: var(--text-main);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 4px;
+}
+
+.modal-orden-titulo i { color: var(--accent); }
+
+.modal-orden-subtitulo {
+    font-size: 12px;
+    color: var(--text-muted);
+}
+
+.modal-destino-global {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-bottom: 18px;
+    background: var(--bg-app);
+    padding: 10px 14px;
+    border-radius: 8px;
+    border: 1px solid var(--border-color);
+}
+
+.modal-destino-label {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    white-space: nowrap;
+}
+
+/* Redefinir btn-destino en este contexto para hacerlos compactos */
+.modal-destino-global .btn-destino {
+    flex-direction: row;
+    padding: 7px 16px;
+    font-size: 12px;
+    gap: 7px;
+    flex: unset;
+}
+
+.modal-destino-global .btn-destino i { font-size: 13px; opacity: 1; }
+.modal-destino-global .btn-destino small { font-size: 10px; display: inline; opacity: 0.8; }
+
+/* ── COLUMNAS ─────────────────────────────────────────── */
+.modal-orden-columnas {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+    min-height: 280px;
+}
+
+.orden-columna {
+    border-radius: 10px;
+    border: 2px dashed var(--border-color);
+    display: flex;
+    flex-direction: column;
+    transition: border-color 0.2s, background 0.2s;
+    overflow: hidden;
+}
+
+.orden-columna.drag-over {
+    border-style: solid;
+}
+
+.orden-col-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 14px;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 1.2px;
+    text-transform: uppercase;
+}
+
+/* Barra — azul bebida */
+.orden-col-barra { border-color: rgba(43,108,176,0.3); }
+.orden-col-barra.drag-over { border-color: #2B6CB0; background: rgba(43,108,176,0.05); }
+.col-header-barra { background: rgba(43,108,176,0.08); color: #2B6CB0; }
+
+/* Cocina — naranja fuego */
+.orden-col-cocina { border-color: rgba(196,126,26,0.3); }
+.orden-col-cocina.drag-over { border-color: #C47E1A; background: rgba(196,126,26,0.05); }
+.col-header-cocina { background: rgba(196,126,26,0.08); color: #9A6010; }
+
+.orden-col-badge {
+    margin-left: auto;
+    width: 20px; height: 20px;
+    border-radius: 50%;
+    background: currentColor;
+    color: white !important;
+    font-size: 11px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0.85;
+}
+
+.orden-col-lista {
+    flex: 1;
+    padding: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    overflow-y: auto;
+    min-height: 200px;
+}
+
+.orden-drop-hint {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    color: var(--border-color);
+    font-size: 11px;
+    letter-spacing: 0.4px;
+    pointer-events: none;
+    padding: 20px;
+    text-align: center;
+}
+
+/* ── TARJETA DE PRODUCTO en las columnas ── */
+.orden-prod-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: 7px;
+    padding: 9px 12px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    cursor: grab;
+    transition: box-shadow 0.15s, transform 0.15s;
+    user-select: none;
+    animation: aparecer 0.2s ease;
+}
+
+.orden-prod-card:active { cursor: grabbing; transform: scale(0.98); }
+.orden-prod-card:hover { box-shadow: 0 3px 10px rgba(0,0,0,0.09); }
+
+.orden-prod-card.en-barra  { border-left: 3px solid #2B6CB0; }
+.orden-prod-card.en-cocina { border-left: 3px solid #C47E1A; }
+
+.orden-prod-cant {
+    font-family: 'DM Mono', monospace;
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--accent);
+    min-width: 24px;
+}
+
+.orden-prod-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.orden-prod-nombre {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-main);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.orden-prod-nota {
+    font-size: 10px;
+    color: var(--text-muted);
+    margin-top: 2px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* Botones de cambio rápido dentro de la tarjeta */
+.orden-prod-toggle {
+    display: flex;
+    gap: 4px;
+    flex-shrink: 0;
+}
+
+.btn-mover {
+    width: 26px; height: 26px;
+    border-radius: 5px;
+    border: 1px solid var(--border-color);
+    background: var(--bg-app);
+    color: var(--text-muted);
+    cursor: pointer;
+    font-size: 11px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.12s;
+}
+
+.btn-mover-barra:hover  { background: rgba(43,108,176,0.12); border-color: #2B6CB0; color: #2B6CB0; }
+.btn-mover-cocina:hover { background: rgba(196,126,26,0.12); border-color: #C47E1A; color: #9A6010; }
+
+/* ── AVISO COORDINACIÓN ── */
+.modal-coordinacion {
+    margin-top: 12px;
+    padding: 10px 14px;
+    background: rgba(74,122,61,0.07);
+    border: 1px solid var(--accent);
+    border-radius: 7px;
+    font-size: 11px;
+    color: var(--accent);
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 9px;
+}
+
+/* ================================================================
+   NOTIFICACIÓN FLOTANTE EN POS
+   ================================================================ */
+.notif-pos {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    z-index: 3000;
+    animation: slideInRight 0.35s ease;
+}
+
+@keyframes slideInRight {
+    from { opacity: 0; transform: translateX(60px); }
+    to   { opacity: 1; transform: translateX(0); }
+}
+
+.notif-pos-inner {
+    background: var(--bg-card);
+    border: 2px solid var(--accent);
+    border-radius: 12px;
+    padding: 14px 16px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    box-shadow: 0 8px 28px rgba(0,0,0,0.15);
+    min-width: 280px;
+    max-width: 360px;
+}
+
+.notif-pos-icon {
+    width: 38px; height: 38px;
+    border-radius: 50%;
+    background: var(--accent-light);
+    color: var(--accent);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    flex-shrink: 0;
+}
+
+.notif-pos-icon.notif-barra { background: rgba(43,108,176,0.12); color: #2B6CB0; }
+.notif-pos-icon.notif-cocina { background: rgba(196,126,26,0.12); color: #9A6010; }
+
+/* Notif urgente: pulsa para llamar la atención del mesero */
+.notif-pos-inner.urgente {
+    border-color: #2E7040;
+    animation: pulsarBorde 1.2s ease infinite;
+}
+@keyframes pulsarBorde {
+    0%, 100% { box-shadow: 0 8px 28px rgba(0,0,0,.15); }
+    50%       { box-shadow: 0 8px 28px rgba(46,112,64,.45), 0 0 0 4px rgba(46,112,64,.15); }
+}
+
+/* Badge entregado en la tarjeta de mesa */
+.badge-entregado { background: rgba(46,112,64,0.13); color: #2E7040; border: 1px solid #2E7040; }
+
+.notif-pos-texto {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.notif-pos-texto strong {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--text-main);
+}
+
+.notif-pos-texto span {
+    font-size: 11px;
+    color: var(--text-muted);
+}
+
+.notif-pos-close {
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    cursor: pointer;
+    font-size: 14px;
+    padding: 4px;
+    border-radius: 4px;
+    flex-shrink: 0;
+}
+
+.notif-pos-close:hover { color: var(--text-main); background: var(--bg-app); }
+
+
+/* ================================================================
+   TARJETA PRODUCTO EN MODAL ORDEN — TOGGLE AQUÍ / LLEVAR
+   ================================================================ */
+.orden-prod-top {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.orden-dest-row {
+    display: flex;
+    gap: 6px;
+    margin-top: 8px;
+    padding-top: 8px;
+    border-top: 1px dashed var(--border-color);
+}
+
+.btn-dest-item {
+    flex: 1;
+    padding: 5px 8px;
+    border-radius: 20px;
+    border: 1.5px solid var(--border-color);
+    background: transparent;
+    color: var(--text-muted);
+    font-size: 10px;
+    font-weight: 600;
+    cursor: pointer;
+    font-family: 'DM Sans', sans-serif;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+    transition: all 0.12s;
+    letter-spacing: 0.3px;
+}
+
+.btn-dest-item:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+}
+
+.btn-dest-item.activo-aqui {
+    background: var(--accent-light);
+    border-color: var(--accent);
+    color: var(--accent);
+    font-weight: 700;
+}
+
+.btn-dest-item.activo-llevar {
+    background: rgba(122, 92, 30, 0.1);
+    border-color: var(--accent-2);
+    color: var(--accent-2);
+    font-weight: 700;
+}
+
