@@ -1,5 +1,5 @@
 <?php
-// ================================================================
+// =================================================================
 //  usuarios.php — Panel de Administración de Usuarios
 //  GET  ?accion=listar           → todos los usuarios
 //  POST ?accion=crear            { nombre, pin, rol }
@@ -7,7 +7,7 @@
 //  POST ?accion=toggle_activo    { id_usuario }
 //  GET  ?accion=historial        → últimos 50 accesos (tabla log_acceso)
 //  POST ?accion=cambiar_pin_meseros  { pin_nuevo }
-// ================================================================
+// =================================================================
 header('Content-Type: application/json; charset=utf-8');
 header('Access-Control-Allow-Origin: *');
 header('Access-Control-Allow-Methods: GET, POST, OPTIONS');
