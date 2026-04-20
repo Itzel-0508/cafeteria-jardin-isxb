@@ -789,6 +789,16 @@ function irPagina(id, btn) {
 
 // ── Cerrar sesión ──────────────────────────────────────────────
 function cerrarSesion() {
+    try {
+        const ses = JSON.parse(sessionStorage.getItem('pos_usuario') || '{}');
+        if (ses && ses.id_usuario) {
+            fetch('login_check.php?accion=logout', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ id_usuario: ses.id_usuario })
+            }).catch(() => {});
+        }
+    } catch(e) {}
     sessionStorage.removeItem('pos_usuario');
     window.location.href = 'index.php';
 }
@@ -1241,7 +1251,9 @@ document.addEventListener('DOMContentLoaded', function(){
 
 function turnoFechaHoy() {
     const hoy = new Date();
-    const iso = hoy.toISOString().split('T')[0];
+    const iso = hoy.getFullYear() + '-' +
+                String(hoy.getMonth() + 1).padStart(2, '0') + '-' +
+                String(hoy.getDate()).padStart(2, '0');
     const inp = document.getElementById('turno-fecha-input');
     if (inp) inp.value = iso;
     cargarTurnoFecha(iso);
