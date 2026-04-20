@@ -283,15 +283,6 @@
         .hist-meta   { font-size: 11.5px; color: var(--text-muted); }
         .hist-ts     { margin-left: auto; font-size: 11.5px; color: var(--text-muted); white-space: nowrap; }
 
-        /* ── PIN compartido meseros ──────────────────────────── */
-        .pin-compartido-box {
-            background: var(--warn-bg); border: 1px solid rgba(176,125,18,.2);
-            border-radius: var(--radius); padding: 16px 20px;
-            display: flex; align-items: center; justify-content: space-between; gap: 16px;
-        }
-        .pin-compartido-box p { font-size: 13px; color: var(--warn); font-weight: 500; }
-        .pin-compartido-box strong { font-size: 15px; }
-
         /* ── Buscador ────────────────────────────────────────── */
         .buscador {
             position: relative; flex: 1;
@@ -534,58 +525,6 @@
                         <i class="fas fa-spinner fa-spin"></i> Cargando historial...
                     </div>
                 </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- ── PÁGINA: PIN MESEROS ───────────────────────────────── -->
-    <div id="pg-meseros_pin" class="page">
-        <div class="page-title"><i class="fas fa-key" style="color:var(--accent);margin-right:10px;"></i>PIN Compartido de Meseros</div>
-        <p class="page-sub">Todos los meseros usan el mismo PIN para acceder al sistema.</p>
-
-        <div class="card">
-            <div class="card-header"><h3>PIN actual de meseros</h3></div>
-            <div class="card-body">
-                <div class="pin-compartido-box" style="margin-bottom:24px;">
-                    <div>
-                        <p>Los meseros comparten un único PIN de acceso.</p>
-                        <p style="font-size:12px;margin-top:4px;color:var(--text-muted);">
-                            Al cambiar el PIN aquí, se actualiza para <strong>todos</strong> los meseros al mismo tiempo.
-                        </p>
-                    </div>
-                    <i class="fas fa-users-between-lines" style="font-size:28px;color:var(--warn);flex-shrink:0;"></i>
-                </div>
-
-                <div class="form-field" style="max-width:320px;">
-                    <label class="form-label">Nuevo PIN (mínimo 4 dígitos)</label>
-                    <div class="pin-field">
-                        <input type="password" id="pin-meseros-input" class="form-input"
-                               maxlength="8" inputmode="numeric" pattern="[0-9]*"
-                               placeholder="••••">
-                        <button class="pin-toggle" onclick="togglePin('pin-meseros-input',this)">
-                            <i class="fas fa-eye"></i>
-                        </button>
-                    </div>
-                </div>
-
-                <div id="aviso-pin-meseros" class="aviso-modal aviso-info" style="max-width:320px;display:none;"></div>
-
-                <button class="btn btn-warn" onclick="cambiarPinMeseros()" style="margin-top:16px;">
-                    <i class="fas fa-key"></i> Cambiar PIN a todos los meseros
-                </button>
-            </div>
-        </div>
-
-        <!-- Lista de meseros activos -->
-        <div class="card">
-            <div class="card-header"><h3>Meseros registrados</h3></div>
-            <div style="overflow-x:auto;">
-                <table class="tabla-usuarios">
-                    <thead>
-                        <tr><th>NOMBRE</th><th>ESTADO</th><th>ACCIONES</th></tr>
-                    </thead>
-                    <tbody id="tbody-meseros"></tbody>
-                </table>
             </div>
         </div>
     </div>
@@ -845,7 +784,7 @@ function irPagina(id, btn) {
     document.getElementById('pg-' + id).classList.add('activa');
     if (btn) btn.classList.add('activo');
     if (id === 'historial') cargarHistorial();
-    if (id === 'meseros_pin') cargarMeseros();
+
 }
 
 // ── Cerrar sesión ──────────────────────────────────────────────
@@ -1131,13 +1070,8 @@ function onRolChange(esEdicion = false) {
     const id = document.getElementById('modal-id').value;
     const esEdit = !!id || esEdicion;
 
-    if (rol === 'mesero') {
-        nota.textContent = 'Los meseros comparten un PIN. Si dejas vacío, se usará el PIN actual del grupo.';
-        label.textContent = 'PIN compartido de meseros (opcional en edición)';
-    } else {
-        nota.textContent = esEdit ? 'Deja vacío para no cambiar el PIN actual.' : '';
-        label.textContent = esEdit ? 'Nuevo PIN (dejar vacío para no cambiar)' : 'PIN de acceso';
-    }
+    nota.textContent = esEdit ? 'Deja vacío para no cambiar el PIN actual.' : '';
+    label.textContent = esEdit ? 'Nuevo PIN (dejar vacío para no cambiar)' : 'PIN de acceso';
 }
 
 // ── GUARDAR USUARIO ────────────────────────────────────────────
@@ -1245,68 +1179,6 @@ async function cargarHistorial() {
             </div>
         </div>
     `).join('');
-}
-
-// ── MESEROS PIN ────────────────────────────────────────────────
-function cargarMeseros() {
-    const meseros = todosUsuarios.filter(u => u.rol === 'mesero');
-    document.getElementById('tbody-meseros').innerHTML = meseros.length
-        ? meseros.map(u => `
-            <tr>
-                <td><div style="display:flex;align-items:center;gap:10px;">
-                    <div style="width:30px;height:30px;border-radius:50%;
-                         background:${ROL_COLORS.mesero};display:grid;place-items:center;
-                         font-weight:700;font-size:12px;color:#fff;">
-                        ${u.nombre[0].toUpperCase()}
-                    </div>
-                    <span style="font-weight:600;">${escHtml(u.nombre)}</span>
-                </div></td>
-                <td><span style="display:inline-flex;align-items:center;gap:6px;">
-                    <span class="${u.activo==1?'badge-activo':'badge-inactivo'}"></span>
-                    ${u.activo==1?'Activo':'Inactivo'}
-                </span></td>
-                <td>
-                    <button class="btn-tbl ok" onclick="abrirModalEditar(${u.id_usuario})">
-                        <i class="fas fa-pen"></i> Editar
-                    </button>
-                    <button class="btn-tbl ${u.activo==1?'peligro':''}" onclick="toggleActivo(${u.id_usuario})">
-                        <i class="fas fa-${u.activo==1?'ban':'circle-check'}"></i>
-                        ${u.activo==1?'Desactivar':'Activar'}
-                    </button>
-                </td>
-            </tr>`).join('')
-        : '<tr><td colspan="3"><div class="empty-state"><i class="fas fa-user-slash"></i><p>No hay meseros registrados</p></div></td></tr>';
-}
-
-async function cambiarPinMeseros() {
-    const pin = document.getElementById('pin-meseros-input').value.trim();
-    const aviso = document.getElementById('aviso-pin-meseros');
-
-    if (!pin || pin.length < 4 || !/^\d+$/.test(pin)) {
-        aviso.className = 'aviso-modal aviso-error';
-        aviso.textContent = 'El PIN debe tener al menos 4 dígitos numéricos.';
-        aviso.style.display = 'block';
-        return;
-    }
-    if (!confirm(`¿Cambiar el PIN de TODOS los meseros a ${pin}?`)) return;
-
-    const res  = await fetch(API + '?accion=cambiar_pin_meseros', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ pin_nuevo: pin })
-    });
-    const data = await res.json();
-
-    aviso.style.display = 'block';
-    if (data.ok) {
-        aviso.className = 'aviso-modal aviso-success';
-        aviso.textContent = `✓ PIN actualizado para ${data.meseros_actualizados} mesero(s).`;
-        document.getElementById('pin-meseros-input').value = '';
-        toast('PIN de meseros actualizado');
-    } else {
-        aviso.className = 'aviso-modal aviso-error';
-        aviso.textContent = data.error || 'Error al cambiar el PIN.';
-    }
 }
 
 // ── Helpers ────────────────────────────────────────────────────
