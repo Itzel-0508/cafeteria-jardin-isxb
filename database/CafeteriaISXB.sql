@@ -74,8 +74,6 @@ CREATE TABLE sesion_trabajo (
     id_usuario_fk INT      NOT NULL,
     fecha_turno   DATE     NOT NULL DEFAULT (CURDATE()),
     hora_entrada  DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    hora_salida   DATETIME NULL,
-
     CONSTRAINT fk_sesion_usuario
         FOREIGN KEY (id_usuario_fk)
         REFERENCES usuario(id_usuario)
