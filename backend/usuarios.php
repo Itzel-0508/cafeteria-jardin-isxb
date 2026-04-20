@@ -1,13 +1,13 @@
 <?php
-// =================================================================
+// ================================================================
 //  usuarios.php — Panel de Administración de Usuarios
 //  GET  ?accion=listar           → todos los usuarios
 //  POST ?accion=crear            { nombre, pin, rol }
 //  POST ?accion=editar           { id_usuario, nombre, pin, rol }
 //  POST ?accion=toggle_activo    { id_usuario }
 //  GET  ?accion=historial        → últimos 50 accesos (tabla log_acceso)
-//  POST ?accion=cambiar_pin_meseros  { pin_nuevo }
-// =================================================================
+
+// ================================================================
 header('Content-Type: application/json; charset=utf-8');
 header('Access-Control-Allow-Origin: *');
 header('Access-Control-Allow-Methods: GET, POST, OPTIONS');
@@ -84,20 +84,6 @@ if ($accion === 'crear') {
     if ($chk->get_result()->num_rows > 0)
         respJson(["ok" => false, "error" => "Ya existe un usuario con ese nombre"]);
 
-    // Si es mesero, usar el PIN compartido actual de los meseros
-    if ($rol === 'mesero') {
-        $rPin = $dp->query("SELECT pin FROM usuario WHERE rol='mesero' AND activo=1 LIMIT 1");
-        if ($rPin && $rPin->num_rows > 0) {
-            $pinHash = $rPin->fetch_assoc()['pin']; // ya hasheado
-            $stmt = $dp->prepare("INSERT INTO usuario (nombre, pin, rol) VALUES (?, ?, ?)");
-            $stmt->bind_param('sss', $nombre, $pinHash, $rol);
-            $stmt->execute();
-            if ($dp->error) respJson(["ok" => false, "error" => $dp->error]);
-            respJson(["ok" => true, "id_usuario" => $dp->insert_id,
-                      "aviso" => "Se usó el PIN compartido actual de los meseros"]);
-        }
-    }
-
     // Añadir columna pin_visible si no existe
     $colCk = $dp->query("SHOW COLUMNS FROM usuario LIKE 'pin_visible'");
     if ($colCk && $colCk->num_rows === 0) $dp->query("ALTER TABLE usuario ADD COLUMN pin_visible VARCHAR(20) NULL");
@@ -173,17 +159,6 @@ if ($accion === 'toggle_activo') {
 
     $nuevo = $dp->query("SELECT activo FROM usuario WHERE id_usuario=$id")->fetch_assoc()['activo'];
     respJson(["ok" => true, "activo" => (int)$nuevo]);
-}
-
-// ── CAMBIAR PIN de todos los meseros ─────────────────────────
-if ($accion === 'cambiar_pin_meseros') {
-    $pin = trim($body['pin_nuevo'] ?? '');
-    if (!$pin || strlen($pin) < 4) respJson(["ok" => false, "error" => "PIN debe tener al menos 4 dígitos"]);
-
-    $dp->query("UPDATE usuario SET pin = SHA2('$pin', 256) WHERE rol = 'mesero'");
-    if ($dp->error) respJson(["ok" => false, "error" => $dp->error]);
-    $afectados = $dp->affected_rows;
-    respJson(["ok" => true, "meseros_actualizados" => $afectados]);
 }
 
 // ── REGISTRAR ACCESO (llamado desde login_check) ──────────────
