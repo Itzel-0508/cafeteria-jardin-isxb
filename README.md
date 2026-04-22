@@ -51,21 +51,18 @@ El acceso se valida mediante PIN cifrado con SHA2-256 y se registra automáticam
 
 ## 📁 Estructura del repositorio
 
-cafeteria-jardin-isxb/
-│
-├── backend/
-│   ├── conexion.php        → Conexión a MySQL y helper respJson()
-│   ├── login_check.php     → Validación de PIN SHA2-256 y redirección por rol
-│   ├── usuarios.php        → API CRUD de usuarios (listar, crear, editar, activar)
-│   └── admin.php           → Panel de administración completo
-│
-├── frontend/
-│   ├── index.php           → Login con teclado PIN + pantalla de mesas + panel admin
-│   └── css/
-│       └── estilos.css     → Estilos globales del sistema
-│
-└── database/
-    └── CafeteriaISXB.sql   → Script completo: tablas, triggers, vistas e índices
+**`backend/`** — Lógica del servidor (PHP)
+- `conexion.php` — Conexión a MySQL y helper respJson()
+- `login_check.php` — Validación de PIN SHA2-256 y redirección por rol
+- `usuarios.php` — API CRUD de usuarios (listar, crear, editar, activar)
+- `admin.php` — Panel de administración completo
+
+**`frontend/`** — Interfaces de usuario
+- `index.php` — Login con teclado PIN, pantalla de mesas y panel admin
+- `css/estilos.css` — Estilos globales del sistema
+
+**`database/`** — Base de datos
+- `CafeteriaISXB.sql` — Script completo: tablas, triggers, vistas e índices
 
 ## 🗃️ Base de datos — Tablas del módulo
 
@@ -91,7 +88,3 @@ cafeteria-jardin-isxb/
 
 
 
-## 🔗 Links
-
-**Repositorio:** https://github.com/Itzel-0508/cafeteria-jardin-isxb
-**Script SQL:** https://github.com/Itzel-0508/cafeteria-jardin-isxb/blob/main/database/CafeteriaISXB.sql
