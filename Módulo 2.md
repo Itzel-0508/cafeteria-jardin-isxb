@@ -115,7 +115,7 @@ El sistema incluye un módulo de reservas que opera de forma independiente al fl
 | `detalle_pedido` | Cada ítem del pedido con cantidad, precio, nota, `ruta_area` (`cocina`/`barra`) y `estado_item` |
 | `producto` | Catálogo completo del menú con tipo, categoría, subcategoría y `ruta_defecto` |
 | `modificador_producto` | Extras y personalizaciones disponibles por tipo de producto (bebida, comida, armable, coctel) |
-| `notificacion` | Canal de mensajes entre áreas: cocina → mesero, barra → mesero, pos → todos |
+| `reserva` | Reservaciones anticipadas por mesa con fecha, hora y datos del cliente |
 
 ### Vistas utilizadas
 
