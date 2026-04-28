@@ -82,6 +82,8 @@ pedidos.php → INSERT pedido + detalle_pedido
 - `mesas.php` — Estado de mesas con consumo acumulado en tiempo real
 - `menu_api.php` — Endpoint que devuelve el catálogo de productos y modificadores
 - `comandas.php` — Transmisión de estados entre cocina, barra y mesero
+- `reservas.php` — API de reservas: crear, listar y gestionar reservaciones
+- `gestion_reservas.php` — Panel de administración de reservas
 
 **`frontend/`** — Interfaces de usuario
 
@@ -95,7 +97,16 @@ pedidos.php → INSERT pedido + detalle_pedido
 
 ---
 
-## 🗃️ Base de datos — Tablas del módulo
+## ➕ Funcionalidad adicional — Reservas de Mesa
+
+El sistema incluye un módulo de reservas que opera de forma independiente al flujo de pedidos. Permite registrar reservaciones anticipadas por mesa, consultarlas desde el panel de administración y visualizarlas en la pantalla de mesas para que el mesero sepa qué mesas están comprometidas antes de asignarlas.
+
+| Archivo | Función |
+|---|---|
+| `reservas.php` | API para crear, listar y gestionar reservaciones en BD |
+| `gestion_reservas.php` | Panel visual para administrar las reservas activas |
+
+---
 
 | Tabla | Descripción |
 |---|---|
