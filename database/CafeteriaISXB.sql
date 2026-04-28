@@ -1,5 +1,5 @@
 -- ═══════════════════════════════════════════════════════════════
---  BASE DE DATOS: CafeteriaISXB  v2
+--  BASE DE DATOS: CafeteriaISXB  
 --  Sistema POS Jardín — Cafetería Itzel & Ximena
 -- ═══════════════════════════════════════════════════════════════
 
@@ -38,7 +38,7 @@ ALTER TABLE usuario
 CREATE TABLE mesa (
     id_mesa        INT      AUTO_INCREMENT PRIMARY KEY,
     numero_mesa    INT      NULL,
-    estado         ENUM('libre','ocupada','cobro','entregado') NOT NULL DEFAULT 'libre',
+    estado         ENUM('libre','ocupada','cobro','entregado','reservada') NOT NULL DEFAULT 'libre',
     hora_ocupacion DATETIME NULL,
     id_usuario_fk  INT      NULL,
 
@@ -50,15 +50,15 @@ CREATE TABLE mesa (
 );
 
 CREATE TABLE producto (
-    id_producto  INT           AUTO_INCREMENT PRIMARY KEY,
-    nombre       VARCHAR(100)  NOT NULL,
-    precio       DECIMAL(10,2) NOT NULL,
-    stock        INT           NOT NULL DEFAULT 0,
-    tipo         ENUM('bebida','comida','coctel') NOT NULL,
-    categoria    VARCHAR(50)   NULL,
-    subcategoria VARCHAR(50)   NULL,
-    ruta_defecto ENUM('barra','cocina') NOT NULL DEFAULT 'barra',
-    activo       TINYINT       NOT NULL DEFAULT 1
+    id_producto   INT           AUTO_INCREMENT PRIMARY KEY,
+    nombre        VARCHAR(100)  NOT NULL,
+    precio        DECIMAL(10,2) NOT NULL,
+    tipo          ENUM('bebida','comida','coctel') NOT NULL,
+    categoria     VARCHAR(50)   NULL,
+    subcategoria  VARCHAR(50)   NULL,
+    ruta_defecto  ENUM('barra','cocina') NOT NULL DEFAULT 'barra',
+    activo        TINYINT       NOT NULL DEFAULT 1,
+    es_temporada  TINYINT       NOT NULL DEFAULT 0
 );
 
 CREATE TABLE modificador_producto (
@@ -74,6 +74,8 @@ CREATE TABLE sesion_trabajo (
     id_usuario_fk INT      NOT NULL,
     fecha_turno   DATE     NOT NULL DEFAULT (CURDATE()),
     hora_entrada  DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    hora_salida   DATETIME NULL,
+
     CONSTRAINT fk_sesion_usuario
         FOREIGN KEY (id_usuario_fk)
         REFERENCES usuario(id_usuario)
@@ -131,6 +133,24 @@ CREATE TABLE notificacion (
     leida      TINYINT     NOT NULL DEFAULT 0,
 
     CONSTRAINT fk_notif_mesa
+        FOREIGN KEY (id_mesa_fk)
+        REFERENCES mesa(id_mesa)
+        ON DELETE CASCADE
+);
+
+CREATE TABLE reserva (
+    id_reserva     INT           AUTO_INCREMENT PRIMARY KEY,
+    id_mesa_fk     INT           NOT NULL,
+    nombre_cliente VARCHAR(100)  NOT NULL,
+    fecha_reserva  DATETIME      NOT NULL,
+    num_personas   INT           NOT NULL DEFAULT 2,
+    nota           TEXT          NULL,
+    evento         VARCHAR(100)  NULL,
+    notif_minutos  INT           NOT NULL DEFAULT 15,
+    activa         TINYINT(1)    NOT NULL DEFAULT 1,
+    ts_creacion    DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT fk_reserva_mesa
         FOREIGN KEY (id_mesa_fk)
         REFERENCES mesa(id_mesa)
         ON DELETE CASCADE
@@ -199,6 +219,27 @@ CREATE TABLE corte_diario (
         REFERENCES usuario(id_usuario)
 );
 
+CREATE TABLE turno_dia (
+    id_turno    INT  AUTO_INCREMENT PRIMARY KEY,
+    id_usuario  INT  NOT NULL,
+    fecha       DATE NOT NULL DEFAULT (CURDATE()),
+    rol_turno   ENUM('admin','mesero','cocina','barra','cajero') NOT NULL,
+    propina     DECIMAL(10,2) NOT NULL DEFAULT 0,
+    ts_registro DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    UNIQUE KEY uq_usuario_fecha (id_usuario, fecha),
+    CONSTRAINT fk_turno_usuario
+        FOREIGN KEY (id_usuario)
+        REFERENCES usuario(id_usuario)
+        ON DELETE CASCADE
+);
+
+CREATE TABLE config_sistema (
+    clave  VARCHAR(60) NOT NULL PRIMARY KEY,
+    valor  TEXT        NOT NULL,
+    ts     DATETIME    NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);
+
 -- ───────────────────────────────────────────────────────────────
 -- 2. ÍNDICES
 -- ───────────────────────────────────────────────────────────────
@@ -216,6 +257,7 @@ CREATE INDEX idx_notif_leida    ON notificacion(leida);
 
 DELIMITER $$
 
+-- Solo un admin a la vez
 CREATE TRIGGER trg_unico_admin_insert
 BEFORE INSERT ON usuario
 FOR EACH ROW
@@ -240,6 +282,7 @@ BEGIN
     END IF;
 END$$
 
+-- Autonumerar mesa si no se especifica
 CREATE TRIGGER trg_numero_mesa
 BEFORE INSERT ON mesa
 FOR EACH ROW
@@ -250,6 +293,7 @@ BEGIN
     END IF;
 END$$
 
+-- Al crear pedido, marcar mesa como ocupada
 CREATE TRIGGER trg_ocupar_mesa
 AFTER INSERT ON pedido
 FOR EACH ROW
@@ -261,6 +305,7 @@ BEGIN
     WHERE id_mesa = NEW.id_mesa_fk;
 END$$
 
+-- Calcular total y cambio al registrar pago
 CREATE TRIGGER trg_total_pago
 BEFORE INSERT ON pago
 FOR EACH ROW
@@ -269,6 +314,7 @@ BEGIN
     SET NEW.cambio = NEW.monto_recibido - NEW.total;
 END$$
 
+-- Al registrar pago, liberar mesa
 CREATE TRIGGER trg_liberar_mesa
 AFTER INSERT ON pago
 FOR EACH ROW
@@ -280,6 +326,7 @@ BEGIN
     WHERE id_mesa = NEW.id_mesa_fk;
 END$$
 
+-- Acumular corte diario al registrar pago
 CREATE TRIGGER trg_corte_diario
 AFTER INSERT ON pago
 FOR EACH ROW
@@ -304,6 +351,7 @@ BEGIN
         num_transacciones      = num_transacciones      + 1;
 END$$
 
+-- Calcular diferencia de caja al cerrar corte
 CREATE TRIGGER trg_diferencia_caja
 BEFORE UPDATE ON corte_diario
 FOR EACH ROW
@@ -313,13 +361,13 @@ BEGIN
     END IF;
 END$$
 
+-- Cuando todos los ítems de un pedido están listos → pedido listo
 CREATE TRIGGER trg_pedido_listo
 AFTER UPDATE ON detalle_pedido
 FOR EACH ROW
 BEGIN
     DECLARE v_total  INT;
     DECLARE v_listos INT;
-    DECLARE v_mesa   INT;
 
     IF NEW.estado_item = 'listo' AND OLD.estado_item <> 'listo' THEN
         SELECT COUNT(*) INTO v_total
@@ -335,36 +383,57 @@ BEGIN
             UPDATE pedido
             SET estado_general = 'listo'
             WHERE id_pedido = NEW.id_pedido_fk;
-
-            SELECT id_mesa_fk INTO v_mesa
-            FROM pedido
-            WHERE id_pedido = NEW.id_pedido_fk;
-
-            UPDATE mesa
-            SET estado = 'entregado'
-            WHERE id_mesa = v_mesa;
         END IF;
     END IF;
 END$$
 
+-- Notificar al mesero cuando el pedido está listo
+-- Detecta si el pedido es de cocina, barra o mixto para usar el origen correcto
 CREATE TRIGGER trg_notif_pedido_listo
 AFTER UPDATE ON pedido
 FOR EACH ROW
 BEGIN
-    DECLARE v_mesa INT;
+    DECLARE v_mesa      INT;
+    DECLARE v_tiene_coc INT DEFAULT 0;
+    DECLARE v_tiene_bar INT DEFAULT 0;
+    DECLARE v_origen    VARCHAR(20);
+    DECLARE v_mensaje   TEXT;
 
     IF NEW.estado_general = 'listo' AND OLD.estado_general <> 'listo' THEN
-        SELECT numero_mesa INTO v_mesa
-        FROM mesa
-        WHERE id_mesa = NEW.id_mesa_fk;
 
-        INSERT INTO notificacion (id_mesa_fk, origen, destino, tipo, mensaje)
-        VALUES (
-            NEW.id_mesa_fk,
-            'cocina', 'mesero',
-            'pedido_listo',
-            CONCAT('Pedido listo — Mesa ', v_mesa)
-        );
+        SELECT numero_mesa INTO v_mesa
+        FROM mesa WHERE id_mesa = NEW.id_mesa_fk;
+
+        SELECT COUNT(*) INTO v_tiene_coc
+        FROM detalle_pedido
+        WHERE id_pedido_fk = NEW.id_pedido AND ruta_area = 'cocina';
+
+        SELECT COUNT(*) INTO v_tiene_bar
+        FROM detalle_pedido
+        WHERE id_pedido_fk = NEW.id_pedido AND ruta_area = 'barra';
+
+        IF v_tiene_coc > 0 AND v_tiene_bar > 0 THEN
+            SET v_origen  = 'cocina';
+            SET v_mensaje = CONCAT('Pedido listo — Mesa ', v_mesa, ' (cocina y barra)');
+        ELSEIF v_tiene_coc > 0 THEN
+            SET v_origen  = 'cocina';
+            SET v_mensaje = CONCAT('Comida lista — Mesa ', v_mesa);
+        ELSE
+            SET v_origen  = 'barra';
+            SET v_mensaje = CONCAT('Bebidas listas — Mesa ', v_mesa);
+        END IF;
+
+        -- Guard 30 seg para evitar duplicados
+        IF NOT EXISTS (
+            SELECT 1 FROM notificacion
+            WHERE id_mesa_fk = NEW.id_mesa_fk
+              AND tipo = 'pedido_listo'
+              AND ts > DATE_SUB(NOW(), INTERVAL 30 SECOND)
+        ) THEN
+            INSERT INTO notificacion (id_mesa_fk, origen, destino, tipo, mensaje)
+            VALUES (NEW.id_mesa_fk, v_origen, 'mesero', 'pedido_listo', v_mensaje);
+        END IF;
+
     END IF;
 END$$
 
@@ -504,15 +573,15 @@ INSERT INTO producto (nombre, precio, tipo, categoria, subcategoria, ruta_defect
 ('Chai Sucio',          65.00, 'bebida', 'calientes', 'Cafés', 'barra'),
 ('Matcha Latte',        70.00, 'bebida', 'calientes', 'Cafés', 'barra'),
 ('Taro Latte',          60.00, 'bebida', 'calientes', 'Cafés', 'barra'),
-('Frappe Capuchino',         60.00, 'bebida', 'frias', 'Frappes Clásicos', 'barra'),
-('Frappe Vainilla',          60.00, 'bebida', 'frias', 'Frappes Clásicos', 'barra'),
-('Frappe Moka',              60.00, 'bebida', 'frias', 'Frappes Clásicos', 'barra'),
-('Frappe Galleta Oreo',      60.00, 'bebida', 'frias', 'Frappes Clásicos', 'barra'),
-('Frappe Caramelo',          60.00, 'bebida', 'frias', 'Frappes Clásicos', 'barra'),
-('Frappe Chocolate Blanco',  60.00, 'bebida', 'frias', 'Frappes Clásicos', 'barra'),
-('Frappe Choco-menta',       60.00, 'bebida', 'frias', 'Frappes Clásicos', 'barra'),
-('Frappe Chocolate Obscuro', 60.00, 'bebida', 'frias', 'Frappes Clásicos', 'barra'),
-('Frappe Chocolate Abuelita',60.00, 'bebida', 'frias', 'Frappes Clásicos', 'barra'),
+('Frappe Capuchino',          60.00, 'bebida', 'frias', 'Frappes Clásicos', 'barra'),
+('Frappe Vainilla',           60.00, 'bebida', 'frias', 'Frappes Clásicos', 'barra'),
+('Frappe Moka',               60.00, 'bebida', 'frias', 'Frappes Clásicos', 'barra'),
+('Frappe Galleta Oreo',       60.00, 'bebida', 'frias', 'Frappes Clásicos', 'barra'),
+('Frappe Caramelo',           60.00, 'bebida', 'frias', 'Frappes Clásicos', 'barra'),
+('Frappe Chocolate Blanco',   60.00, 'bebida', 'frias', 'Frappes Clásicos', 'barra'),
+('Frappe Choco-menta',        60.00, 'bebida', 'frias', 'Frappes Clásicos', 'barra'),
+('Frappe Chocolate Obscuro',  60.00, 'bebida', 'frias', 'Frappes Clásicos', 'barra'),
+('Frappe Chocolate Abuelita', 60.00, 'bebida', 'frias', 'Frappes Clásicos', 'barra'),
 ('Soda Frutos Rojos',  55.00, 'bebida', 'frias', 'Sodas Italianas', 'barra'),
 ('Soda Fresa',         55.00, 'bebida', 'frias', 'Sodas Italianas', 'barra'),
 ('Soda Blueberry',     55.00, 'bebida', 'frias', 'Sodas Italianas', 'barra'),
@@ -530,11 +599,11 @@ INSERT INTO producto (nombre, precio, tipo, categoria, subcategoria, ruta_defect
 ('Crepa Salada',       70.00, 'comida', 'crepas', 'Crepas',  'cocina'),
 ('Waffle Clásico',     65.00, 'comida', 'crepas', 'Waffles', 'cocina'),
 ('Waffle Especial',    75.00, 'comida', 'crepas', 'Waffles', 'cocina'),
-('Ensalada Verde',       70.00, 'comida', 'snacks', 'Ensaladas', 'cocina'),
-('Ensalada César',       80.00, 'comida', 'snacks', 'Ensaladas', 'cocina'),
-('Nachos con Guacamole', 75.00, 'comida', 'snacks', 'Snacks',    'cocina'),
-('Papas Fritas',         50.00, 'comida', 'snacks', 'Snacks',    'cocina'),
-('Fruta de Temporada',   55.00, 'comida', 'snacks', 'Snacks',    'cocina'),
+('Ensalada Verde',        70.00, 'comida', 'snacks', 'Ensaladas', 'cocina'),
+('Ensalada César',        80.00, 'comida', 'snacks', 'Ensaladas', 'cocina'),
+('Nachos con Guacamole',  75.00, 'comida', 'snacks', 'Snacks',    'cocina'),
+('Papas Fritas',          50.00, 'comida', 'snacks', 'Snacks',    'cocina'),
+('Fruta de Temporada',    55.00, 'comida', 'snacks', 'Snacks',    'cocina'),
 ('Chapata de Jamón',   80.00, 'comida', 'chapatas', 'Chapatas',   'cocina'),
 ('Chapata Vegetal',    75.00, 'comida', 'chapatas', 'Chapatas',   'cocina'),
 ('Croissant Simple',   45.00, 'comida', 'chapatas', 'Croissants', 'cocina'),
@@ -543,9 +612,9 @@ INSERT INTO producto (nombre, precio, tipo, categoria, subcategoria, ruta_defect
 ('Burrito Campechano',  95.00, 'comida', 'comida', 'Burritos',     'cocina'),
 ('Burrito de Pollo',    90.00, 'comida', 'comida', 'Burritos',     'cocina'),
 ('Burrito Vegetariano', 85.00, 'comida', 'comida', 'Burritos',     'cocina'),
-('Hamburguesa Clásica',100.00, 'comida', 'comida', 'Hamburguesas', 'cocina'),
-('Hamburguesa BBQ',    110.00, 'comida', 'comida', 'Hamburguesas', 'cocina'),
-('Hamburguesa Veggie',  95.00, 'comida', 'comida', 'Hamburguesas', 'cocina'),
+('Hamburguesa Clásica', 100.00, 'comida', 'comida', 'Hamburguesas', 'cocina'),
+('Hamburguesa BBQ',     110.00, 'comida', 'comida', 'Hamburguesas', 'cocina'),
+('Hamburguesa Veggie',   95.00, 'comida', 'comida', 'Hamburguesas', 'cocina'),
 ('Mojito',            90.00, 'coctel', 'cocteles', 'Clásicos',   'barra'),
 ('Piña Colada',       95.00, 'coctel', 'cocteles', 'Clásicos',   'barra'),
 ('Margarita',         90.00, 'coctel', 'cocteles', 'Clásicos',   'barra'),
@@ -582,17 +651,10 @@ INSERT INTO modificador_producto (nombre, precio_extra, aplica_a) VALUES
 ('Extra Carne',               25.00, 'comida'),
 ('Extra Ron Blanco',          20.00, 'coctel'),
 ('Extra Ginebra',             30.00, 'coctel');
+-- Eliminar columna stock
+ALTER TABLE producto DROP COLUMN stock;
 
--- ───────────────────────────────────────────────────────────────
--- 6. VERIFICACIÓN FINAL
--- ───────────────────────────────────────────────────────────────
+-- Agregar columna es_temporada
+ALTER TABLE producto ADD COLUMN es_temporada TINYINT NOT NULL DEFAULT 0;
 
-SELECT 'CafeteriaISXB v2 lista ✓' AS estado;
 
-SELECT CONCAT(COUNT(*), ' productos')          AS resumen FROM producto
-UNION ALL
-SELECT CONCAT(COUNT(*), ' modificadores')                 FROM modificador_producto
-UNION ALL
-SELECT CONCAT(COUNT(*), ' mesas')                         FROM mesa
-UNION ALL
-SELECT CONCAT(COUNT(*), ' usuarios (solo admin)')         FROM usuario;
